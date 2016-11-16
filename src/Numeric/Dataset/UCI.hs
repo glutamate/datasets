@@ -14,6 +14,7 @@ import qualified Data.Vector as V
 import Data.Char (toUpper)
 import Text.Read (readMaybe)
 import Data.ByteString.Char8 (unpack)
+import qualified Data.ByteString.Lazy.Char8 as BL8
 
 type Dataset a = FilePath -- ^ Directory for caching downloaded datasets
                  -> IO [a]
@@ -23,12 +24,12 @@ type URL = String
 getDataset :: Dataset a -> IO [a]
 getDataset ds = ds "/tmp/haskds"
 
-csvDataset :: FromRecord a => URL -> Dataset a
-csvDataset url cacheDir = do
+csvDatasetDropLines :: FromRecord a => Int -> URL -> Dataset a
+csvDatasetDropLines dlns url cacheDir = do
   createDirectoryIfMissing True cacheDir
   let fnm = cacheDir </> "ds" <> show (hash url)
       parseFile contents = do
-        case decode NoHeader contents of
+        case decode NoHeader (dropLines dlns contents) of
           Right theData -> return $ V.toList theData
           Left err -> fail err
       castRequest :: Request String -> Request BL.ByteString
@@ -43,6 +44,9 @@ csvDataset url cacheDir = do
        BL.writeFile fnm bs
        parseFile bs
 
+csvDataset :: FromRecord a =>  URL -> Dataset a
+csvDataset  = csvDatasetDropLines 0
+
 dashToCamelCase :: String -> String
 dashToCamelCase ('-':c:cs) = toUpper c : dashToCamelCase cs
 dashToCamelCase (c:cs) = c : dashToCamelCase cs
@@ -53,3 +57,7 @@ parseDashToCamelField s =
   case readMaybe (dashToCamelCase $ unpack s) of
     Just wc -> pure wc
     Nothing -> fail "unknown"
+
+dropLines :: Int -> BL.ByteString -> BL.ByteString
+dropLines 0 s = s
+dropLines n s = dropLines (n-1) $ BL.tail $ BL8.dropWhile (/='\n') s
