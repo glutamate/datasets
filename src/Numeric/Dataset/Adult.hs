@@ -66,6 +66,8 @@ data Income = GT50K | LE50K
 instance FromField Income where
   parseField " >50K" = pure GT50K
   parseField " <=50K" = pure LE50K
+  parseField " >50K." = pure GT50K
+  parseField " <=50K." = pure LE50K
   parseField ">50K" = pure GT50K
   parseField "<=50K" = pure LE50K
   parseField _ = fail "unknown income"
@@ -95,3 +97,6 @@ instance FromRecord Adult where
 
 adult :: Dataset Adult
 adult = csvDataset "http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
+
+adultTestSet :: Dataset Adult
+adultTestSet = csvDatasetDropLines 1 "http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test"
