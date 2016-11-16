@@ -30,7 +30,7 @@ data MaritalStatus = MarriedCivSpouse | Divorced | NeverMarried
   deriving (Show, Read, Eq, Generic)
 
 instance FromField MaritalStatus where
-  parseField "Married-AF-spouse" = pure MarriedAFSpouse
+--  parseField "Married-AF-spouse" = pure MarriedAFSpouse
   parseField s = parseDashToCamelField s
 
 data Occupation = TechSupport | CraftRepair | OtherService | Sales | ExecManagerial | ProfSpecialty
@@ -39,7 +39,7 @@ data Occupation = TechSupport | CraftRepair | OtherService | Sales | ExecManager
   deriving (Show, Read, Eq, Generic)
 
 instance FromField Occupation where
-  parseField "ArmedForces" = pure ArmedForces
+--  parseField "ArmedForces" = pure ArmedForces
   parseField s = parseDashToCamelField s
 
 data Relationship = Wife | OwnChild | Husband | NotInFamily | OtherRelative | Unmarried
@@ -47,6 +47,28 @@ data Relationship = Wife | OwnChild | Husband | NotInFamily | OtherRelative | Un
 
 instance FromField Relationship where
   parseField s = parseDashToCamelField s
+
+data Race = White | AsianPacIslander | AmerIndianEskimo | Other | Black
+  deriving (Show, Read, Eq, Generic)
+
+instance FromField Race where
+  parseField s = parseDashToCamelField s
+
+data Sex = Female | Male
+  deriving (Show, Read, Eq, Generic)
+
+instance FromField Sex where
+  parseField s = parseDashToCamelField s
+
+data Income = GT50K | LE50K
+  deriving (Show, Read, Eq, Generic)
+
+instance FromField Income where
+  parseField " >50K" = pure GT50K
+  parseField " <=50K" = pure LE50K
+  parseField ">50K" = pure GT50K
+  parseField "<=50K" = pure LE50K
+  parseField _ = fail "unknown income"
 
 data Adult = Adult
   { age :: Int
@@ -57,11 +79,19 @@ data Adult = Adult
   , maritalStatus :: MaritalStatus
   , occupation :: Maybe Occupation
   , relationship :: Relationship
+  , race :: Race
+  , sex :: Sex
+  , capitalGain :: Int
+  , capitalLoss :: Int
+  , hoursPerWeek :: Int
+  , nativeCountry :: Text
+  , income :: Income
   } deriving (Show, Read, Generic)
 
 instance FromRecord Adult where
   parseRecord v = Adult <$> v .! 0 <*> (v.! 1 <|> return Nothing) <*> v.!2 <*> (strip <$> v.!3)
-                        <*> v.!4 <*> v.!5<*> (v.!6 <|> return Nothing) <*> v.!7
+                        <*> v.!4 <*> v.!5<*> (v.!6 <|> return Nothing) <*> v.!7 <*> v.!8
+                        <*> v.!9 <*> v.!10 <*> v.!11 <*> v.!12<*> v.!13<*> v.!14
 
 adult :: Dataset Adult
 adult = csvDataset "http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
