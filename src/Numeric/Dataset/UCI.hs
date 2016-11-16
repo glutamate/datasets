@@ -11,6 +11,9 @@ import Data.Monoid
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
 
+import Data.Char (toUpper)
+import Text.Read (readMaybe)
+import Data.ByteString.Char8 (unpack)
 
 type Dataset a = FilePath -- ^ Directory for caching downloaded datasets
                  -> IO [a]
@@ -39,3 +42,14 @@ csvDataset url cacheDir = do
        bs <- getResponseBody rsp
        BL.writeFile fnm bs
        parseFile bs
+
+dashToCamelCase :: String -> String
+dashToCamelCase ('-':c:cs) = toUpper c : dashToCamelCase cs
+dashToCamelCase (c:cs) = c : dashToCamelCase cs
+dashToCamelCase [] = []
+
+parseDashToCamelField :: Read a => Field -> Parser a
+parseDashToCamelField s =
+  case readMaybe (dashToCamelCase $ unpack s) of
+    Just wc -> pure wc
+    Nothing -> fail "unknown"
